@@ -88,7 +88,7 @@
             if (isNaN(last)) last = start;
             while (last < stop) {
                 last += step;
-                d3.json("http://49.212.96.123:8778/jolokia/read/java.lang:type=Memory", function(data) {
+                d3.json("http://127.0.0.1:8778/jolokia/read/java.lang:type=Memory", function(data) {
                     eval("values.push(data.value.HeapMemoryUsage." + name + ")");
                 });
             }
