@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8">
+    <title>Ore no Monitor sample</title>
+    <script type="text/javascript" src="./js/d3.v2.min.js"></script>
+    <script type="text/javascript" src="./js/cubism.v1.min.js"></script>
+    <style>
+        @import url(//fonts.googleapis.com/css?family=Yanone+Kaffeesatz:400,700);
+        body {
+            font-family: "Helvetica Neue", Helvetica, sans-serif;
+            margin: auto;
+            margin-top: 40px;
+            margin-bottom: 4em;
+            width: 960px;
+        }
+        svg {
+          font: 10px sans-serif;
+        }
+
+        .axis {
+          font: 10px sans-serif;
+        }
+
+        .axis text {
+          -webkit-transition: fill-opacity 250ms linear;
+        }
+
+        .axis path {
+          display: none;
+        }
+
+        .axis line {
+          stroke: #000;
+          shape-rendering: crispEdges;
+        }
+
+        .horizon {
+          border-bottom: solid 1px #000;
+          overflow: hidden;
+          position: relative;
+        }
+
+        .horizon {
+          border-top: solid 1px #000;
+          border-bottom: solid 1px #000;
+        }
+
+        .horizon + .horizon {
+          border-top: none;
+        }
+
+        .horizon canvas {
+          display: block;
+        }
+
+        .horizon .title,
+        .horizon .value {
+          bottom: 0;
+          line-height: 30px;
+          margin: 0 6px;
+          position: absolute;
+          text-shadow: 0 1px 0 rgba(255,255,255,.5);
+          white-space: nowrap;
+        }
+
+        .horizon .title {
+          left: 0;
+        }
+
+        .horizon .value {
+          right: 0;
+        }
+    </style>
+    </head>
+    <body>
+        <h1>Cubism.js my example</h1>
+        <h2>Heap Memory Usage</h2>
+        <div id="memory"></div>
+
+        <script>
+        function getHeapMemory(name) {
+          var values = [],
+              last;
+
+            return context.metric(function(start, stop, step, callback) {
+            start = +start, stop = +stop;
+            if (isNaN(last)) last = start;
+            while (last < stop) {
+                last += step;
+                d3.json("http://49.212.96.123:8778/jolokia/read/java.lang:type=Memory", function(data) {
+                    eval("values.push(data.value.HeapMemoryUsage." + name + ")");
+                });
+            }
+            callback(null, values = values.slice((start - stop) / step));
+            }, name);
+        }
+        </script>
+        <script>
+        var context = cubism.context()
+            .serverDelay(0)
+            .clientDelay(0)
+            .step(1e3)
+            .size(960);
+
+        var memList = ["used", "committed", "init", "max"];
+        var heapUsed = [];
+
+        for (var i = 0; i < memList.length; i++) {
+            heapUsed.push(getHeapMemory(memList[i]));
+        }
+
+        d3.select("#memory").call(function(div) {
+
+          div.append("div")
+              .attr("class", "axis")
+              .call(context.axis().orient("top"));
+
+          div.selectAll(".horizon")
+              .data(heapUsed)
+              .enter().append("div")
+              .attr("class", "horizon")
+              .call(context.horizon()
+                .height(50));
+        });
+
+        context.on("focus", function(i) {
+              d3.selectAll(".value").style("right", i == null ? null : context.size() - i + "px");
+        });
+
+        </script>
+  </body>
+</html>
